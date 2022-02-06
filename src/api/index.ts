@@ -1,5 +1,6 @@
 import axios, { AxiosRequestConfig } from "axios";
 import { useEffect, useState } from "react";
+import Cookies from 'js-cookie';
 
 axios.defaults.baseURL = 'http://localhost:3333/';
 
@@ -9,6 +10,12 @@ interface IErrorData {
 }
 
 export const useFetchData = () => {
+    const setCookie = (key:string, value:any) => {
+        if(value) Cookies.set(key, value);
+        else Cookies.remove(key)
+    }
+    const getCookie = (key:string):any => Cookies.get(key);
+
     const [isLoading, setIsLoading] = useState(false);
     const [resultData, setResultData] = useState<any>(null);
     const [errorData, setErrorData] = useState<IErrorData | null>(null);
@@ -59,6 +66,8 @@ export const useFetchData = () => {
         setResultData,
         errorData,
         setErrorData,
-        fecthData
+        fecthData,
+        getCookie,
+        setCookie
     }
 }

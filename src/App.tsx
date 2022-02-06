@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import LoginForm from './LoginForm';
 import './App.css';
 import { AuthContext } from './contexts/AuthContext';
@@ -9,19 +9,27 @@ import { Home } from './Home';
 import { Button, Navbar, NavbarBrand, NavbarText } from 'reactstrap';
 
 function App() {
-  const [token, setToken] = useState<string | null>(null);
-  const {isLoading, resultData, setResultData, errorData, setErrorData, fecthData} = useFetchData();
+  const {isLoading, resultData, setResultData, errorData, setErrorData, fecthData, getCookie, setCookie} = useFetchData();
+  const [token, setToken] = useState<string | null | undefined>(getCookie('token'));
   const navigate = useNavigate();
-
+  
   const logout = () => {
     setToken(null);
     setResultData(null);
+    setCookie('token', null);
+    setCookie('user', null);
     navigate('/login');
   }
 
+  useEffect(() => {
+    const cookie = getCookie('user');
+    setResultData(cookie ? JSON.parse(cookie) : cookie);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   return (
     <div className="App">
-      <AuthContext.Provider value={{token, setToken, isLoading, resultData, errorData, setErrorData, fecthData}}>
+      <AuthContext.Provider value={{token, setToken, isLoading, resultData, errorData, setErrorData, fecthData, setCookie}}>
         <Navbar
           color='dark'
           expand='md'

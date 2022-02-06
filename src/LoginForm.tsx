@@ -4,16 +4,15 @@ import { Alert, Button, Form, FormGroup, Input, Label } from "reactstrap";
 import { AuthContext } from "./contexts/AuthContext";
 
 const LoginForm = () => {
-  const {token, setToken, isLoading, resultData, errorData, setErrorData, fecthData} = useContext(AuthContext);
+  const {token, setToken, isLoading, resultData, errorData, setErrorData, fecthData, setCookie} = useContext(AuthContext);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
-    console.log('Result', resultData);
     if(resultData?.token) {
       setToken(resultData.token);
-
+      setCookie('token', resultData.token);
       // get for user data and check if token is valid
       fecthData({
         method:'GET',
@@ -24,6 +23,7 @@ const LoginForm = () => {
       })
 
     } else if (token && resultData?.username) {
+      setCookie('user', JSON.stringify(resultData));
       navigate('/dashboard');
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
