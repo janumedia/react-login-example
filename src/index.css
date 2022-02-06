@@ -7,6 +7,31 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+.navbar-menu {
+  list-style-type: none;
+}
+.navbar-menu > li {
+  display: inline-block;
+  margin-left: 1rem;
+}
+.navbar-menu > li:first-child {
+  margin-left: 0;
+}
+
+.layout {
+  padding: 1rem;
+}
+
+.LoginForm {
+  display: flex;
+  justify-content: center;
+}
+
+.LoginForm > * {
+  margin-top: 2rem;
+}
+
+/* 
 .form {
   margin-top: 200px;
 }
@@ -20,4 +45,4 @@ body {
   color: white;
   border: 0;
   padding: 10px 20px;
-}
+} */

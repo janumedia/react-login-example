@@ -1,9 +1,10 @@
 import React, { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Alert, Button, Form, FormGroup, Input, Label } from "reactstrap";
 import { AuthContext } from "./contexts/AuthContext";
 
 const LoginForm = () => {
-  const {token, setToken, resultData, errorData, fecthData} = useContext(AuthContext);
+  const {token, setToken, isLoading, resultData, errorData, setErrorData, fecthData} = useContext(AuthContext);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
@@ -28,9 +29,9 @@ const LoginForm = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resultData])
 
-  useEffect(() => {
-    console.log('ERROR', errorData);
-  }, [errorData])
+  // useEffect(() => {
+  //   console.log('ERROR', errorData);
+  // }, [errorData])
   
   const submit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -42,27 +43,45 @@ const LoginForm = () => {
   };
 
   return (
-    <form className="form" onSubmit={submit}>
-      <div>
-        <input
-          type="text"
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-        />
-      </div>
-      <div>
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-      </div>
-      <div>
-        <button type="submit">Sign in</button>
-      </div>
-    </form>
+    <div className="LoginForm layout">
+      <Form onSubmit={submit}>
+        <FormGroup>
+          <Label>Username</Label>
+          <Input
+            type="text"
+            placeholder="Your Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+          />
+        </FormGroup>
+        <FormGroup>
+          <Label>Password</Label>
+          <Input
+            type="password"
+            placeholder="Your Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </FormGroup>
+        <FormGroup>
+          <Button
+            type="submit"
+            color="dark"
+            disabled={isLoading}
+          >
+            { isLoading ? 'Signing In...' : 'Sign In' }
+          </Button>
+        </FormGroup>
+        <Alert
+          color="warning"
+          isOpen={errorData !== null}
+          toggle={() => setErrorData(null)}
+        >
+          <b>{errorData?.code}</b>
+          <p>{errorData?.message}</p>
+        </Alert>
+      </Form>
+    </div>
   );
 };
 

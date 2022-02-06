@@ -21,6 +21,7 @@ export const useFetchData = () => {
     useEffect(() => {
         if(options) {
             setIsLoading(true);
+            setErrorData(null);
             axios(options).then(({data}) => {
                 setResultData(data);
                 setIsLoading(false);

@@ -1,18 +1,9 @@
-import React, { useContext } from "react";
-import { AuthContext } from "./contexts/AuthContext";
+import React from "react";
 
 export const Dashboard = () => {
-    const {resultData} = useContext(AuthContext);
     return (
-        <div>
+        <div className="Dashboard layout">
             <h2>Dashboard</h2>
-            {
-                resultData?.username 
-                ? (
-                    <div>{resultData.firstName} {resultData.lastName} ({resultData.username})</div>
-                )
-                : ''
-            }
         </div>
     )
 }
