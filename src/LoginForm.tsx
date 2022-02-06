@@ -1,27 +1,31 @@
-import React, { useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
+import { AuthContext } from "./contexts/AuthContext";
 
 const LoginForm = () => {
+  const {setToken, resultData, errorData, fecthData} = useContext(AuthContext);
+  
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
+  useEffect(() => {
+    console.log('Result', resultData);
+    if(resultData?.token) {
+      setToken(resultData.token);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resultData])
+
+  useEffect(() => {
+    console.log('ERROR', errorData);
+  }, [errorData])
+  
   const submit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    fetch("http://localhost:3333/login", {
-      headers: {
-        "Content-Type": "application/json",
-      },
-      method: "POST",
-      body: JSON.stringify({
-        username: username,
-        password: password,
-      }),
-    }).then((response) => {
-      if (response.ok) {
-        alert("Success!");
-      } else {
-        alert("Failed!");
-      }
-    });
+    fecthData ({
+      method: 'POST',
+      url: '/login',
+      data: {username, password}
+    })
   };
 
   return (
