@@ -1,11 +1,12 @@
 import React, { useContext, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { AuthContext } from "./contexts/AuthContext";
 
 const LoginForm = () => {
   const {token, setToken, resultData, errorData, fecthData} = useContext(AuthContext);
-  
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     console.log('Result', resultData);
@@ -22,8 +23,7 @@ const LoginForm = () => {
       })
 
     } else if (token && resultData?.username) {
-      console.log('VALID');
-      // goes to dashboard
+      navigate('/dashboard');
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resultData])

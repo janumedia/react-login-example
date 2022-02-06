@@ -3,6 +3,8 @@ import LoginForm from './LoginForm';
 import './App.css';
 import { AuthContext } from './contexts/AuthContext';
 import { useFetchData } from './api';
+import { Route, Routes } from 'react-router-dom';
+import { Dashboard } from './Dashboard';
 
 function App() {
   const [token, setToken] = useState<string | null>(null);
@@ -11,7 +13,10 @@ function App() {
   return (
     <div className="App">
       <AuthContext.Provider value={{token, setToken, isLoading, resultData, errorData, setErrorData, fecthData}}>
-        <LoginForm />
+        <Routes>
+          <Route path='/login' element={<LoginForm />}/>
+          <Route path='/dashboard' element={<Dashboard/>}/>
+        </Routes>
       </AuthContext.Provider>
     </div>
   );
