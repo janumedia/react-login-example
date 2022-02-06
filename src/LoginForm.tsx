@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { AuthContext } from "./contexts/AuthContext";
 
 const LoginForm = () => {
-  const {setToken, resultData, errorData, fecthData} = useContext(AuthContext);
+  const {token, setToken, resultData, errorData, fecthData} = useContext(AuthContext);
   
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -11,6 +11,19 @@ const LoginForm = () => {
     console.log('Result', resultData);
     if(resultData?.token) {
       setToken(resultData.token);
+
+      // get for user data and check if token is valid
+      fecthData({
+        method:'GET',
+        url: '/user',
+        headers: {
+          authorization: resultData.token
+        }
+      })
+
+    } else if (token && resultData?.username) {
+      console.log('VALID');
+      // goes to dashboard
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resultData])
