@@ -1,73 +1,64 @@
-import axios, { AxiosRequestConfig } from "axios";
 import { useEffect, useState } from "react";
-import Cookies from 'js-cookie';
+import { useCookie } from "../hooks/useCookie";
+import { useFetchData } from "../hooks/useFetchData"
 
-axios.defaults.baseURL = 'http://localhost:3333/';
-
-interface IErrorData {
-    code: any,
-    message: any
+interface IUser {
+    username: string,
+    firstName?: string,
+    lastName?: string
 }
 
-export const useFetchData = () => {
-    const setCookie = (key:string, value:any) => {
-        if(value) Cookies.set(key, value);
-        else Cookies.remove(key)
+export const useApi = () => {
+    const {isLoading, resultData, errorData, setErrorData, fecthData} = useFetchData();
+    const {getCookie, setCookie} = useCookie();
+    const [token, setToken] = useState<string | null | undefined>(getCookie('token'));
+    const [user, setUser] = useState<IUser | null>(null);
+    
+    const login = (username:string, password:string):void => {
+        fecthData ({
+            method: 'POST',
+            url: '/login',
+            data: {username, password}
+        })
     }
-    const getCookie = (key:string):any => Cookies.get(key);
 
-    const [isLoading, setIsLoading] = useState(false);
-    const [resultData, setResultData] = useState<any>(null);
-    const [errorData, setErrorData] = useState<IErrorData | null>(null);
-    const [options, setOptions] = useState<AxiosRequestConfig<any> | null>(null);
+    const getUser = (token:string):void => {
+        fecthData ({
+            method:'GET',
+            url: '/user',
+            headers: {
+            authorization: token
+            }
+        })
+    }
 
-    const fecthData = (options:AxiosRequestConfig<any>) => {
-        setOptions(options);
+    const logout = ():void => {
+        setToken(null);
+        setUser(null);
+        setCookie('token', null);
     }
 
     useEffect(() => {
-        if(options) {
-            setIsLoading(true);
-            setErrorData(null);
-            axios(options).then(({data}) => {
-                setResultData(data);
-                setIsLoading(false);
-            }).catch(({response, request, message}) => {
-                if(response) {
-                    setErrorData({
-                        code: response?.status,
-                        message: response?.data
-                    })
-                } else if(request) {
-                    setErrorData({
-                        code: 'ERROR',
-                        message: 'XMLHttpRequest failed!'
-                    })
-                } else if(message) {
-                    setErrorData({
-                        code: 'ERROR',
-                        message: JSON.stringify(message)
-                    })
-                } else {
-                    setErrorData({
-                        code: 'ERROR',
-                        message: 'Invalid request!'
-                    })
-                }
-                setIsLoading(false);
-            })
+        if(resultData?.token) {
+            setToken(resultData.token);
+            setCookie('token', resultData.token);
         }
-
-    }, [options]);
+        if(token && resultData?.username) {
+            setUser(resultData);
+        }
+        if(errorData) logout();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [resultData, errorData])
 
     return {
         isLoading,
-        resultData,
-        setResultData,
+        login,
+        token,
+        setToken,
+        user,
+        getUser,
+        logout,
         errorData,
-        setErrorData,
-        fecthData,
-        getCookie,
-        setCookie
+        setErrorData
     }
 }

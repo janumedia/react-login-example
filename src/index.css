@@ -9,13 +9,18 @@ body {
 
 .navbar-menu {
   list-style-type: none;
+  margin: 0;
+  padding: 0;
 }
-.navbar-menu > li {
-  display: inline-block;
-  margin-left: 1rem;
-}
-.navbar-menu > li:first-child {
-  margin-left: 0;
+
+@media screen and (min-width:560px) {
+  .navbar-menu > li {
+    display: inline-block;
+    margin-left: 1rem;
+  }
+  .navbar-menu > li:first-child {
+    margin-left: 0;
+  }  
 }
 
 .layout {
