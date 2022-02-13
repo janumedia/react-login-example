@@ -16,50 +16,61 @@ const LoginForm = () => {
   
   useEffect(() => {
     if(token && !user) getUser(token);
-    if(token && user) navigate('/dashboard');
+    if(user) navigate('/dashboard');
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, user])
 
   return (
     <div className="LoginForm layout">
-      <Form onSubmit={submit}>
-        <FormGroup>
-          <Label>Username</Label>
-          <Input
-            type="text"
-            placeholder="Your Username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            autoFocus
-          />
-        </FormGroup>
-        <FormGroup>
-          <Label>Password</Label>
-          <Input
-            type="password"
-            placeholder="Your Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </FormGroup>
-        <FormGroup>
-          <Button
-            type="submit"
-            color="dark"
-            disabled={isLoading}
+      {
+        token && !user
+        ? 'Getting User...' 
+        : (
+        <Form name="login-form" onSubmit={submit}>
+          <FormGroup>
+            <Label>
+              Username
+              <Input
+                type="text"
+                placeholder="Your Username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                autoFocus
+              />
+            </Label>
+            
+          </FormGroup>
+          <FormGroup>
+            <Label>
+              Password
+              <Input
+                type="password"
+                placeholder="Your Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </Label>
+          </FormGroup>
+          <FormGroup>
+            <Button
+              type="submit"
+              color="dark"
+              disabled={isLoading || (username.length < 3 || password.length < 3)}
+            >
+              { isLoading ? 'Signing In...' : 'Sign In' }
+            </Button>
+          </FormGroup>
+          <Alert
+            color="warning"
+            isOpen={errorData !== null}
+            toggle={() => setErrorData(null)}
           >
-            { isLoading ? 'Signing In...' : 'Sign In' }
-          </Button>
-        </FormGroup>
-        <Alert
-          color="warning"
-          isOpen={errorData !== null}
-          toggle={() => setErrorData(null)}
-        >
-          <b>{errorData?.code}</b>
-          <p>{errorData?.message}</p>
-        </Alert>
-      </Form>
+            <b>{errorData?.code}</b>
+            <p>{errorData?.message}</p>
+          </Alert>
+        </Form>
+        )
+      }
     </div>
   );
 };

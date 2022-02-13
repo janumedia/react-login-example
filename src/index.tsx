@@ -4,11 +4,24 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { BrowserRouter } from 'react-router-dom';
+import { useApi } from './api';
+import { AuthContext } from './contexts/AuthContext';
+
+function Wrapper ({children} : {children:JSX.Element}) {
+  const {isLoading, login, token, user, getUser, logout, errorData, setErrorData} = useApi();  
+  return (
+    <AuthContext.Provider value={{isLoading, login, token, user, getUser, logout, errorData, setErrorData}}>
+      {children}
+    </AuthContext.Provider>
+  )
+}
 
 ReactDOM.render(
   <React.StrictMode>
     <BrowserRouter>
-      <App />
+      <Wrapper>
+        <App />
+      </Wrapper>
     </BrowserRouter>
   </React.StrictMode>,
   document.getElementById('root')

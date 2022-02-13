@@ -22,7 +22,7 @@ export const useFetchData = () => {
         if(options) {
             setIsLoading(true);
             setErrorData(null);
-            axios(options).then(({data}) => {
+            axios.request(options).then(({data}) => {
                 setResultData(data);
                 setIsLoading(false);
             }).catch(({response, request, message}) => {
@@ -49,6 +49,10 @@ export const useFetchData = () => {
                 }
                 setIsLoading(false);
             })
+        }
+
+        return () => {
+            setOptions(null);
         }
 
     }, [options]);
