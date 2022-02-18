@@ -15,14 +15,6 @@ export const useApi = () => {
     const [user, setUser] = useState<IUser | null>(null);
     
     const login = (username:string, password:string):void => {
-        if(!username || !password || username.length < 3 || password.length < 3)
-        {
-            setErrorData({
-                code: 'ERROR',
-                message: 'Username and Password should 3 chars minimum!'
-            })
-            return;
-        }
         fecthData ({
             method: 'POST',
             url: '/login',

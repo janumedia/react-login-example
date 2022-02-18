@@ -1,4 +1,5 @@
-import { screen, render, waitFor } from "@testing-library/react";
+import React from "react";
+import { screen, render, waitFor, fireEvent, waitForElementToBeRemoved } from "@testing-library/react";
 import '@testing-library/jest-dom'
 import userEvent from "@testing-library/user-event";
 import { BrowserRouter } from 'react-router-dom';
@@ -8,6 +9,7 @@ import { useApi } from ".";
 import {AuthContext} from '../contexts/AuthContext';
 import App from "../App";
 import "../hooks/useCookie";
+import LoginForm from "../LoginForm";
 
 jest.mock('axios');
 
@@ -18,7 +20,8 @@ jest.mock('axios');
 //   }))
 
 // IMPORTANT!
-// to disable cookies implementations and resistant for next test assertion
+// to disable cookies implementations
+// to avoid problem with next test
 jest.mock('../hooks/useCookie', () => {
     return {
         useCookie: () => {
@@ -30,29 +33,14 @@ jest.mock('../hooks/useCookie', () => {
     }
 })
 
-function LoginWrapper() {
+function Wrapper(children) {
     let api = {};
     function Wrapper() {
         Object.assign(api, useApi());
         return (
             <BrowserRouter>
                 <AuthContext.Provider value={{...api}}>
-                    {/* <AuthContext.Consumer>
-                        {
-                            (value) => (
-                                <>
-                                    <h1>isLoading: {(value.isLoading).toString()}</h1>
-                                    <p>{token}</p>
-                                    <button onClick={() => value.login('admin', 'pass')}>Click</button>
-                                </>
-                            )
-                        }
-                    </AuthContext.Consumer> */}
-                    {/* <Routes>
-                        <Route path="/" element={<LoginForm/>}/>
-                        <Route path="/dashboard" element={<Dashboard/>}/>
-                    </Routes> */}
-                    <App/>
+                    { children }
                 </AuthContext.Provider>
             </BrowserRouter>
         );
@@ -64,166 +52,185 @@ function LoginWrapper() {
     }
 }
 
-function clearInput(...inputs) {
-    inputs.map(i => userEvent.clear(i));
-}
-
 const fakeToken = 'abcdefghijklmn';
 const fakeUser = {username:'johndoe', firstName: 'John', lastName: 'Doe'};
-const fakeError = {status:404, data: 'Wrong Password!'}
+const fakeResponseError = {status:404, data: 'Wrong Password!'};
+const fakeRequestError = {};
+const fakeMessageError = 'Server Error!';
 
-describe('Login Test', () => {
-    let container, api;
-    beforeEach(async () => {
-        let res = LoginWrapper()
+describe('LoginForm', () => {
+    beforeEach(() => {
+         Wrapper(<LoginForm/>)
+    })
+
+    test('display empty username input', () => {
+        const usernameInput = screen.getByLabelText('Username')
+        expect(usernameInput).toBeInTheDocument();
+        expect(usernameInput).toHaveAttribute('type', 'text');
+        expect(usernameInput).toHaveValue('');
+    })
+    test('display empty password input', () => {
+        const passwordInput = screen.getByLabelText('Password');
+        expect(passwordInput).toBeInTheDocument();
+        expect(passwordInput).toHaveAttribute('type', 'password');
+        expect(passwordInput).toHaveValue('');
+    })
+    test('display submit button', () => {
+        const submitBtn = screen.getByRole('button', {name: /sign in/i});
+        expect(submitBtn).toBeInTheDocument();
+        expect(submitBtn).toHaveAttribute('type', 'submit');
+    })
+
+    describe('Form validation:', () => {
+        test('username input validation', async () => {
+            const usernameInput = screen.getByLabelText('Username');
+            
+            fireEvent.blur(usernameInput)
+            await screen.findByText(/Username is required/);
+
+            userEvent.type(usernameInput, 'us');
+            expect(usernameInput).toHaveValue('us');
+            fireEvent.blur(usernameInput)
+            await screen.findByText(/Username required 3 chars min./i);
+            
+            userEvent.clear(usernameInput)
+            userEvent.type(usernameInput, 'user');
+            await waitForElementToBeRemoved(screen.getByText(/Username required 3 chars min./i));
+        })
+        test('password input validation', async () => {
+            const passwordInput = screen.getByLabelText('Password')
+            
+            fireEvent.blur(passwordInput)
+            await screen.findByText(/Password is required/);
+
+            userEvent.type(passwordInput, 'pa');
+            expect(passwordInput).toHaveValue('pa');
+            fireEvent.blur(passwordInput)
+            await screen.findByText(/Password required 3 chars min./i);
+            
+            userEvent.clear(passwordInput)
+            userEvent.type(passwordInput, 'pass');
+            await waitForElementToBeRemoved(screen.getByText(/Password required 3 chars min./i));
+        })
+    })
+})
+
+describe('Login Integrations', () => {
+    let api;
+    beforeEach(() => {
+        let res = Wrapper(<App/>)
         api = res.api;
-        container = res.component.container;
     })
 
     afterEach(() => {
-        container = null;
+        api = null;
     })
-    describe('Default Login Page', ()=> {
-        test('Has a Navigation bar only with a brand name', async() => {
-            expect(screen.queryByRole('navigation')).toBeInTheDocument();
-            expect(container.querySelector('.navbar-brand')).toBeInTheDocument();
-            expect(container.querySelector('.navbar-text')).not.toBeInTheDocument();
-        })
-        test('Has a Form with name = "login-form"', () => {
-            expect(screen.getByRole('form')).toBeInTheDocument();
-            expect(screen.getByRole('form')).toHaveAttribute('name', 'login-form');
-        })
-        test('Has an empty Username input with label = "Username"', () => {
-            expect(screen.getByLabelText('Username')).toBeInTheDocument();
-            expect(container.querySelector('input[type=text]')).toBeInTheDocument();
-            expect(container.querySelector('input[type=text]')).toHaveValue('');
-        })
-        test('Has an empty Password input with label = "Password"', () => {
-            expect(screen.getByLabelText('Password')).toBeInTheDocument();
-            expect(container.querySelector('input[type=password]')).toBeInTheDocument();
-            expect(container.querySelector('input[type=password]')).toHaveValue('');
-        })
-
-        test('Has a disabled type = "submit" button', async () => {
-            expect(container.querySelector('button[type=submit]')).toBeInTheDocument();
-            expect(container.querySelector('button[type=submit]')).toBeDisabled(true);
-        })
-
-        test('Has NO Alert', () => {
-            expect(screen.queryByRole('alert')).toBeNull();
-        })
-    })
-
-    describe('Handle Login', () => {
-        test('Disable login with invalid input ( < 3 chars)', async() => {
-            const usernameInput = container.querySelector('input[type=text]');
-            const passwordInput = container.querySelector('input[type=password]');
-            const submitButton = container.querySelector('button[type=submit]');
-            
-            // with empty input
-            expect(submitButton).toBeDisabled(true);
-            
-            // with invalid username input
-            userEvent.type(usernameInput, 'us');
-            expect(submitButton).toBeDisabled(true);
-            
-            // with invalid password input
-            clearInput(usernameInput, passwordInput);
-            userEvent.type(passwordInput, 'pa');
-            expect(submitButton).toBeDisabled(true);
-            
-            // with invalid username or password input
-            clearInput(usernameInput, passwordInput);
-            userEvent.type(usernameInput, 'user');
-            userEvent.type(passwordInput, 'pa');
-            expect(submitButton).toBeDisabled(true);
-
-            clearInput(usernameInput, passwordInput);
-            userEvent.type(usernameInput, 'us');
-            userEvent.type(passwordInput, 'pass');
-            userEvent.click(submitButton);
-            expect(submitButton).toBeDisabled(true);
-        })
-
-        test('Enable login with valid input  ( >= 3 chars)', async() => {
-            userEvent.type(container.querySelector('input[type=text]'), 'user');
-            userEvent.type(container.querySelector('input[type=password]'), 'pass');
-            expect(container.querySelector('button[type=submit]')).toBeEnabled(true);
-        })
-
-        test('Login Error: Show Alert', async() => {
+    
+    describe('Handle Login:', () => {
+        test('Login Error: show error message with a close button', async() => {
             axios.request
-            .mockRejectedValueOnce({response: fakeError});
+            .mockRejectedValueOnce({response: fakeResponseError})
+            .mockRejectedValueOnce({request: fakeRequestError})
+            .mockRejectedValueOnce({message: fakeMessageError})
+            .mockRejectedValueOnce({});
 
-            const submitButton = container.querySelector('button[type=submit]');
+            const submitButton = screen.getByRole('button', {name: /sign in/i});
+            
+            userEvent.type(screen.getByLabelText('Username'), 'user');
+            userEvent.type(screen.getByLabelText('Password'), 'pass');
+            await waitFor(() => expect(submitButton).not.toBeDisabled())
 
-            userEvent.type(container.querySelector('input[type=text]'), 'user');
-            userEvent.type(container.querySelector('input[type=password]'), 'pass');
-            expect(submitButton).toBeEnabled(true);
-            userEvent.click(submitButton);
-            expect(submitButton).toBeDisabled(true);
-            expect(api.isLoading).toBe(true);
-
-            // tips: use wait to elimate `act` error message
-            // https://kentcdodds.com/blog/fix-the-not-wrapped-in-act-warning
-            await waitFor(() => api.user)
-            expect(api.isLoading).toBe(false);
+            // 1st: test on response error
+            fireEvent.click(submitButton);
+            await waitFor(() => screen.findByText(fakeResponseError.data));
             expect(screen.queryByRole('alert')).toBeInTheDocument();
-            expect(screen.queryByRole('alert')).toHaveTextContent(fakeError.status);
-            expect(screen.queryByRole('alert')).toHaveTextContent(fakeError.data);
-            expect(submitButton).toBeEnabled(true);
+            expect(screen.queryByRole('alert')).toHaveTextContent(fakeResponseError.status);
+            expect(screen.queryByRole('alert')).toHaveTextContent(fakeResponseError.data);
+            
+            // 2nd: test on request error
+            fireEvent.click(submitButton)
+            await waitFor(() => screen.findByRole('alert'));
+            
+            // 3rd: on message error
+            fireEvent.click(submitButton)
+            await waitFor(() => screen.findByRole('alert'));
+            
+            // 4th: on other error
+            fireEvent.click(submitButton)
+            await waitFor(() => screen.findByRole('alert'));
+            
+            fireEvent.click(screen.getByLabelText('Close'));
+            await waitForElementToBeRemoved(screen.getByRole('alert'))
         })
 
-        test('Login Success: Redirect to Dasboard, update navbar: show "Logout" button', async () => {
+        test('Login Success: redirect to /dasboard, update navbar: show user info with "Logout" button', async () => {
             axios.request
             .mockResolvedValueOnce({data: {token: fakeToken}})
             .mockResolvedValueOnce({data: fakeUser});
 
-            const submitButton = container.querySelector('button[type=submit]');
+            const submitButton = screen.getByRole('button', {name: /sign in/i});
+        
+            userEvent.type(screen.getByLabelText('Username'), 'user');
+            userEvent.type(screen.getByLabelText('Password'), 'pass');
+            
+            await waitFor(() => expect(submitButton).not.toBeDisabled())
 
-            // login
-            userEvent.type(container.querySelector('input[type=text]'), 'user');
-            userEvent.type(container.querySelector('input[type=password]'), 'pass');
-            userEvent.click(submitButton);
-            expect(submitButton).toBeDisabled(true);
-            expect(api.isLoading).toBe(true);
-
-            // tips: use wait to elimate `act` error message
+            fireEvent.click(submitButton);
+            
+            // tips: use waitFor to elimate `act` error message
             // https://kentcdodds.com/blog/fix-the-not-wrapped-in-act-warning
-            await waitFor(() => api.user)
+            await waitForElementToBeRemoved(screen.getByRole('form'));
+
+            expect(window.location.pathname).toBe('/dashboard');
+            expect(screen.getByText(`${fakeUser.firstName} ${fakeUser.lastName} (${fakeUser.username})`)).toBeInTheDocument();
+            expect(screen.getByRole('heading', {level:2})).toHaveTextContent('Dashboard');
+            expect(screen.getByText('Logout', {selector:'button'})).toBeInTheDocument();
+            
             expect(api.isLoading).toBe(false);
             expect(api.token).toEqual(fakeToken);
             expect(api.user).toEqual(fakeUser);
-            expect(container.querySelector('.navbar-text')).toBeInTheDocument();
-            expect(screen.getByRole('heading', {level:2})).toHaveTextContent('Dashboard');
-            expect(screen.getByText('Logout', {selector:'button'})).toBeInTheDocument();
+
+            // extra test router navigate to home
+            fireEvent.click(screen.getByText(/Home/));
+            expect(window.location.pathname).toBe('/');
+            expect(screen.getByRole('heading', {level:1})).toHaveTextContent('Home');
         })
     })
 
-    describe('Handle Logout', () => {
-        test('Logout success: Redirect to Login Form, reset navbar', async () => {
+    describe('Handle Logout:', () => {
+        test('Logout Success: redirect to /login, reset navbar', async () => {
             axios.request
             .mockResolvedValueOnce({data: {token: fakeToken}})
             .mockResolvedValueOnce({data: fakeUser});
 
-            // login
-            userEvent.type(container.querySelector('input[type=text]'), 'user');
-            userEvent.type(container.querySelector('input[type=password]'), 'pass');
-            userEvent.click(container.querySelector('button[type=submit]'));
-            // // tips: use wait to elimate `act` error message
-            // // https://kentcdodds.com/blog/fix-the-not-wrapped-in-act-warning
-            await waitFor(() => api.user)
+            const submitButton = screen.getByRole('button', {name: /sign in/i});
+        
+            userEvent.type(screen.getByLabelText('Username'), 'user');
+            userEvent.type(screen.getByLabelText('Password'), 'pass');
             
+            await waitFor(() => expect(submitButton).not.toBeDisabled())
+
+            fireEvent.click(submitButton);
+
+            // tips: use waitFor to elimate `act` error message
+            // https://kentcdodds.com/blog/fix-the-not-wrapped-in-act-warning
+            await screen.findByText('Logout', {selector: 'button'});
+
             // logout
-            userEvent.click(screen.getByText('Logout', {selector:'button'}));
-            await waitFor(() => !api.token);
+            fireEvent.click(screen.getByText('Logout', {selector:'button'}));
+            
+            await waitFor(() => {
+                expect(screen.queryByText('Logout', {selector:'button'})).not.toBeInTheDocument()
+            })
+
+            expect(window.location.pathname).toBe('/login');
+
+            expect(screen.queryByText(`${fakeUser.firstName} ${fakeUser.lastName} (${fakeUser.username})`)).not.toBeInTheDocument();
+            expect(screen.getByRole('form')).toBeInTheDocument();
+
             expect(api.isLoading).toBe(false);
             expect(api.token).toEqual(null);
             expect(api.user).toEqual(null);
-            expect(container.querySelector('.navbar-text')).not.toBeInTheDocument();
-            expect(screen.getByRole('form')).toBeInTheDocument();
-            expect(screen.getByRole('form')).toHaveAttribute('name', 'login-form');
         })
     })
-
 })
